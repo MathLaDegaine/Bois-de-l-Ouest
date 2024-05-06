@@ -1,0 +1,65 @@
+version: "3.7"
+
+services:
+    laravel:
+        build:
+            dockerfile: Dockerfile
+        restart: always
+        ports:
+            - "8000:80"
+    caddy:
+        image: caddy:alpine
+        restart: unless-stopped
+        cap_add:
+          - NET_ADMIN
+        ports:
+            - "80:80"
+            - "443:443"
+            - "443:443/udp"
+        volumes:
+            - $PWD/Caddyfile:/etc/caddy/Caddyfile
+            - $PWD/src:/srv
+            - bramm-caddy-data:/data
+            - bramm-caddy-config:/config
+    mysql:
+        image: mysql:8.0
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: "root"
+        volumes:
+            - bramm-db:/var/lib/mysql
+        ports:
+            - 3306:3306
+    redis:
+        restart: always
+        image: redis:6
+        command: redis-server --appendonly yes
+        ports:
+            - 6379:6379
+    mailhog:
+        image: mailhog/mailhog
+        restart: always
+        ports:
+            - 1025:1025
+            - 8025:8025
+    phpmyadmin:
+        image: phpmyadmin:latest
+        restart: always
+        ports:
+            - "8001:80"
+        environment:
+            PMA_ABSOLUTE_URI: "https://phpmyadmin.dev/"
+            PMA_HOST: mysql
+            PMA_USER: root
+            PMA_PASSWORD: "root"
+            UPLOAD_LIMIT: 10G
+            MEMORY_LIMIT: 2G
+            MAX_EXECUTION_TIME: 600
+
+volumes:
+    bramm-db:
+        driver: local
+    bramm-caddy-data:
+        driver: local
+    bramm-caddy-config:
+        driver: local
